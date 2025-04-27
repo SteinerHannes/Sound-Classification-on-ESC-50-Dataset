@@ -7,6 +7,10 @@ defaults:
 
 test:
   reproducible: false
+  experiment_path: ../../../results/sample-run
+  checkpoints:
+    - 'terminal.pt'
+    #- 'best_val_loss.pt'
 
 data:
   use_hardcoded_global_stats: true

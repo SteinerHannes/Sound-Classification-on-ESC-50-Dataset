@@ -16,7 +16,7 @@ from models.utils import EarlyStopping, Tee
 from dataset.dataset_ESC50 import ESC50, get_global_stats
 
 # evaluate model on different testing data 'dataloader'
-def test(model, dataloader, criterion, device):
+def test(cfg, model, dataloader, criterion, device):
     model.eval()
 
     losses = []
@@ -115,7 +115,7 @@ def fit_classifier():
         train_acc, train_loss = train_epoch()
 
         # validate model
-        val_acc, val_loss, _ = test(model, val_loader, criterion=criterion, device=device)
+        val_acc, val_loss, _ = test(cfg, model, val_loader, criterion=criterion, device=device)
         val_loss_avg = np.mean(val_loss)
 
         # print('\n')
@@ -260,6 +260,7 @@ def main(config: DictConfig) -> None:
 
             print(f'\ntest {experiment}')
             test_acc, test_loss, _ = test(
+                cfg,
                 model,
                 test_loader,
                 criterion=criterion,
