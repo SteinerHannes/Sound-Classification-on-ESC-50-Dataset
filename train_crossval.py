@@ -13,7 +13,13 @@ import sys
 from functools import partial
 
 from models.utils import EarlyStopping, Tee
-from dataset.dataset_ESC50 import ESC50
+from dataset.dataset_ESC50 import ESC50, get_global_stats
+
+global_stats = np.array([[-54.369884,  20.843649],
+                         [-54.27712 ,  20.85503 ],
+                         [-54.188335 , 20.79954 ],
+                         [-54.236378 , 20.792656],
+                         [-54.193005 , 20.953829]])
 
 # evaluate model on different testing data 'dataloader'
 def test(model, dataloader, criterion, device):
@@ -160,6 +166,12 @@ def main(config: DictConfig) -> None:
     experiment_root = Path(os.getcwd())
     print(f"Output directory: {experiment_root}")
 
+    print(f"Calculating global mean and std for training data of each fold from: {data_path}")
+    # global_stats = get_global_stats(cfg=cfg, data_path=data_path)
+    print("Calculation finished. Global stats (mean, std) per fold:")
+    print(global_stats)
+    print("-" * 30)
+
     # for all folds
     scores = {}
     for test_fold in cfg.data.test_folds:
@@ -174,7 +186,14 @@ def main(config: DictConfig) -> None:
             # vorab festlegen kann. Hier wird der ESC50-Datensatz mit den Testfalten 1-5 geladen.
 
             # Für jeden Testfold laden wir den ESC50-Datensatz mit den entsprechenden Testfalten.
-            get_fold_dataset = partial(ESC50, root=data_path, download=True, test_folds={test_fold}, cfg=cfg)
+            get_fold_dataset = partial(
+                ESC50,
+                root=data_path,
+                download=True,
+                test_folds={test_fold},
+                global_mean_std=global_stats[test_fold - 1],
+                cfg=cfg
+            )
 
             # liefer ein data von ESC50 wo man __getitem__ und __len__ aufrufen kann
             # liefer mel spectrogramm
@@ -255,6 +274,7 @@ def main(config: DictConfig) -> None:
             scores[test_fold] = pd.Series(dict(TestAcc=test_acc, TestLoss=np.mean(test_loss)))
             print(scores[test_fold])
             print()
+
     scores = pd.concat(scores).unstack([-1])
     print(pd.concat((scores, scores.agg(['mean', 'std']))))
 
