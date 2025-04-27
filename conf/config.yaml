@@ -5,6 +5,18 @@ defaults:
   - training: base  
   #- training: kaggle-T4
 
+test:
+  reproducible: false
+
+data:
+  use_hardcoded_global_stats: true
+  hardcoded_global_stats:
+    - [-54.369884, 20.843649]
+    - [-54.27712, 20.85503]
+    - [-54.188335, 20.79954]
+    - [-54.236378, 20.792656]
+    - [-54.193005, 20.953829]
+
 
 hydra:
   run:

@@ -204,10 +204,13 @@ class ESC50(data.Dataset):
         return file_name, feat, class_id
 
 
-def get_global_stats(data_path):
+def get_global_stats(cfg, data_path):
+    if cfg.data.use_hardcoded_global_stats:
+        return np.array(cfg.data.hardcoded_global_stats)
+
     res = []
     for i in range(1, 6):
-        train_set = ESC50(subset="train", test_folds={i}, root=data_path, download=True)
+        train_set = ESC50(cfg=cfg, subset="train", test_folds={i}, root=data_path, download=True)
         a = torch.concatenate([v[1] for v in tqdm(train_set)])
         res.append((a.mean(), a.std()))
     return np.array(res)
