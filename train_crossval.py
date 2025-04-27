@@ -202,7 +202,6 @@ def main(config: DictConfig) -> None:
                 persistent_workers=cfg.training.persistent_workers,
             )
 
-            print()
             # instantiate model
             model = hydra.utils.instantiate(cfg.model)
             model = model.to(device)
