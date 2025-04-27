@@ -1,0 +1,17 @@
+path: ../../../data/esc50
+runs_path: results
+folds: 5
+test_folds: [1, 2, 3, 4, 5]
+val_size: 0.2
+
+# ## feature
+# defaults
+# TODO implement sampling rate (still global setting)
+sr: 44100
+n_fft: 1024
+hop_length: 512
+n_mels: 128
+#n_mfcc = 42
+
+# overrides
+#sr: 22050

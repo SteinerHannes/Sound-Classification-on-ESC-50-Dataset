@@ -1,0 +1,8 @@
+# "AudioMLP(n_steps=216, n_mels=config.n_mels, hidden1_size=512, hidden2_size=128, output_size=config.n_classes, time_reduce=1)"
+_target_: models.model_classifier.AudioMLP
+n_steps: 431
+n_mels: 128
+hidden1_size: 512
+hidden2_size: 128
+output_size: 50
+time_reduce: 1

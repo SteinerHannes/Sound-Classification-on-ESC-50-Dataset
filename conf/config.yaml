@@ -1,0 +1,16 @@
+defaults:
+  - _self_
+  - data: esc50
+  - model: audio-mlp
+  #- model: my-fancy-cnn
+  - training: base  
+  #- training: kaggle-T4
+
+
+hydra:
+  run:
+    dir: outputs/${hydra:job.name}/${now:%Y-%m-%d_%H-%M-%S}
+  job:
+    chdir: true  # Force working directory change
+  #job_logging:
+    #disable_existing_loggers: true
