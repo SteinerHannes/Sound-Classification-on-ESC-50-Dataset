@@ -1,4 +1,5 @@
 import torch
+from omegaconf import DictConfig
 from torch.utils import data
 from sklearn.model_selection import train_test_split
 import requests
@@ -9,7 +10,6 @@ from functools import partial
 import numpy as np
 import librosa
 
-import config
 from . import transforms
 
 # CUDA for PyTorch
@@ -53,7 +53,8 @@ def download_progress(current, total, width=80):
 
 class ESC50(data.Dataset):
 
-    def __init__(self, root, test_folds=frozenset((1,)), subset="train", global_mean_std=(0.0, 0.0), download=False):
+    def __init__(self, root, cfg:DictConfig, test_folds=frozenset((1,)), subset="train", global_mean_std=(0.0, 0.0), download=False):
+        self.cfg = cfg
         audio = 'ESC-50-master/audio'
         root = os.path.normpath(root)
         audio = os.path.join(root, audio)
@@ -83,14 +84,14 @@ class ESC50(data.Dataset):
         if subset == "test":
             self.file_names = test_files
         else:
-            if config.val_size:
-                train_files, val_files = train_test_split(train_files, test_size=config.val_size, random_state=0)
+            if cfg.data.val_size:
+                train_files, val_files = train_test_split(train_files, test_size=cfg.data.val_size, random_state=0)
             if subset == "train":
                 self.file_names = train_files
             else:
                 self.file_names = val_files
         # the number of samples in the wave (=length) required for spectrogram
-        out_len = int(((config.sr * 5) // config.hop_length) * config.hop_length)
+        out_len = int(((cfg.data.sr * 5) // cfg.data.hop_length) * cfg.data.hop_length)
         train = self.subset == "train"
         if train:
             # augment training data with transformations that include randomness
@@ -125,7 +126,7 @@ class ESC50(data.Dataset):
             )
         self.global_mean = global_mean_std[0]
         self.global_std = global_mean_std[1]
-        self.n_mfcc = config.n_mfcc if hasattr(config, "n_mfcc") else None
+        self.n_mfcc = cfg.data.n_mfcc if hasattr(cfg.data, "n_mfcc") else None
 
     def __len__(self):
         return len(self.file_names)
@@ -145,7 +146,7 @@ class ESC50(data.Dataset):
             # loading the audio file first auch CPU
             # Konvertierung der sampling rate frist auch viel CPU
             # 44.000
-            wave, rate = librosa.load(path, sr=config.sr)
+            wave, rate = librosa.load(path, sr=self.cfg.data.sr)
 
             if wave.ndim == 1:
                 wave = wave[:, np.newaxis]
@@ -168,24 +169,27 @@ class ESC50(data.Dataset):
             wave_copy = self.cache_dict[index]
 
         if self.n_mfcc:
-            mfcc = librosa.feature.mfcc(y=wave_copy.numpy(),
-                                        sr=config.sr,
-                                        n_mels=config.n_mels,
-                                        n_fft=1024,
-                                        hop_length=config.hop_length,
-                                        n_mfcc=self.n_mfcc)
+            mfcc = librosa.feature.mfcc(
+                y=wave_copy.numpy(),
+                sr=self.cfg.data.sr,
+                n_mels=self.cfg.data.n_mels,
+                n_fft=self.cfg.data.n_fft,
+                hop_length=self.cfg.data.hop_length,
+                n_mfcc=self.n_mfcc
+            )
             feat = mfcc
         else:
             # frist am meisten CPU
             # torch audi könnte mit to_cuda() schneller sein um mellspektrogram zu berechnen
             # aber data loading sollte auf der CPU sein, weil sonst alles auf der GPU ist
-            s = librosa.feature.melspectrogram(y=wave_copy.numpy(),
-                                               sr=config.sr,
-                                               n_mels=config.n_mels,
-                                               n_fft=1024,
-                                               hop_length=config.hop_length,
-                                               #center=False,
-                                               )
+            s = librosa.feature.melspectrogram(
+                y=wave_copy.numpy(),
+                sr=self.cfg.data.sr,
+                n_mels=self.cfg.data.n_mels,
+                n_fft=self.cfg.data.n_fft,
+                hop_length=self.cfg.data.hop_length,
+                #center=False,
+            )
             log_s = librosa.power_to_db(s, ref=np.max)
 
             # masking the spectrograms

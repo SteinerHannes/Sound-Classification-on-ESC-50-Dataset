@@ -1,23 +1,19 @@
+from pathlib import Path
+
+import hydra
 import torch
 import torch.nn as nn
 import pandas as pd
 import numpy as np
 import os
-import datetime
+
+from omegaconf import DictConfig
 from tqdm import tqdm
 import sys
 from functools import partial
 
 from models.utils import EarlyStopping, Tee
 from dataset.dataset_ESC50 import ESC50
-import config
-
-# mean and std of train data for every fold
-global_stats = np.array([[-54.364834, 20.853344],
-                         [-54.279022, 20.847532],
-                         [-54.18343, 20.80387],
-                         [-54.223698, 20.798292],
-                         [-54.200905, 20.949806]])
 
 # evaluate model on different testing data 'dataloader'
 def test(model, dataloader, criterion, device):
@@ -29,7 +25,7 @@ def test(model, dataloader, criterion, device):
     probs = {}
     with torch.no_grad():
         # no gradient computation needed
-        for k, x, label in tqdm(dataloader, unit='bat', disable=config.disable_bat_pbar, position=0):
+        for k, x, label in tqdm(dataloader, unit='bat', disable=cfg.training.disable_bat_pbar, position=0):
             x = x.float().to(device)
             y_true = label.to(device)
 
@@ -60,7 +56,7 @@ def train_epoch():
     # train_loader gibt ein batch an mel spectrogramm und labels zurück
     # 32 samples in einem batch
     # Zufälliges Auswählen von Samples macht der DataLoader
-    for _, x, label in tqdm(train_loader, unit='bat', disable=config.disable_bat_pbar, position=0):
+    for _, x, label in tqdm(train_loader, unit='bat', disable=cfg.training.disable_bat_pbar, position=0):
         # Epoche wird per Batchsize in steps unterteilt
         # Das hier ist quasi ein Step
         # Sehr abhängig von num_workers. Prozesse arbeiten parallel für einen Batch
@@ -102,10 +98,15 @@ def train_epoch():
 
 
 def fit_classifier():
-    num_epochs = config.epochs
+    num_epochs = cfg.training.epochs
 
-    loss_stopping = EarlyStopping(patience=config.patience, delta=0.002, verbose=True, float_fmt=float_fmt,
-                                  checkpoint_file=os.path.join(experiment, 'best_val_loss.pt'))
+    loss_stopping = EarlyStopping(
+        patience=cfg.training.patience,
+        delta=cfg.training.delta,
+        verbose=True,
+        float_fmt=float_fmt,
+        checkpoint_file=os.path.join(experiment, 'best_val_loss.pt')
+    )
 
     pbar = tqdm(range(1, 1 + num_epochs), ncols=50, unit='ep', file=sys.stdout, ascii=True)
     for epoch in (range(1, 1 + num_epochs)):
@@ -143,38 +144,27 @@ def fit_classifier():
     torch.save(model.state_dict(), os.path.join(experiment, 'terminal.pt'))
 
 
-# build model from configuration.
-def make_model():
-    n = config.n_classes
-    model_constructor = config.model_constructor
-    print(model_constructor)
-    model = eval(model_constructor)
-    return model
+@hydra.main(version_base="1.3", config_path="conf", config_name="config")
+def main(config: DictConfig) -> None:
+    # make config global for this file only, as quick temporary solution.
+    # You should better pass config as function arguments.
+    global cfg
+    cfg = config
 
-
-if __name__ == "__main__":
-    data_path = config.esc50_path
+    global model, train_loader, val_loader, criterion, optimizer, scheduler, device, experiment
+    data_path = Path(cfg.data.path)
     use_cuda = torch.cuda.is_available()
     use_mps = torch.backends.mps.is_available()
-    device = torch.device(f"cuda:{config.device_id}" if use_cuda else "mps" if use_mps else "cpu")
+    device = torch.device(f"cuda:{cfg.training.device_id}" if use_cuda else "mps" if use_mps else "cpu")
 
-    # digits for logging
-    float_fmt = ".3f"
-    pd.options.display.float_format = ('{:,' + float_fmt + '}').format
-    runs_path = config.runs_path
-    experiment_root = os.path.join(runs_path, str(datetime.datetime.now().strftime('%Y-%m-%d-%H-%M')))
-    os.makedirs(experiment_root, exist_ok=True)
+    experiment_root = Path(os.getcwd())
+    print(f"Output directory: {experiment_root}")
 
     # for all folds
     scores = {}
-    # expensive!
-    #global_stats = get_global_stats(data_path)
-    # for spectrograms
-    print("WARNING: Using hardcoded global mean and std. Depends on feature settings!")
-    for test_fold in config.test_folds:
+    for test_fold in cfg.data.test_folds:
         experiment = os.path.join(experiment_root, f'{test_fold}')
-        if not os.path.exists(experiment):
-            os.mkdir(experiment)
+        os.makedirs(experiment, exist_ok=True)
 
         # clone stdout to file (does not include stderr). If used may confuse linux 'tee' command.
         with Tee(os.path.join(experiment, 'train.log'), 'w', 1, encoding='utf-8',
@@ -184,73 +174,94 @@ if __name__ == "__main__":
             # vorab festlegen kann. Hier wird der ESC50-Datensatz mit den Testfalten 1-5 geladen.
 
             # Für jeden Testfold laden wir den ESC50-Datensatz mit den entsprechenden Testfalten.
-            get_fold_dataset = partial(ESC50, root=data_path, download=True,
-                                       test_folds={test_fold}, global_mean_std=global_stats[test_fold - 1])
+            get_fold_dataset = partial(ESC50, root=data_path, download=True, test_folds={test_fold}, cfg=cfg)
 
             # liefer ein data von ESC50 wo man __getitem__ und __len__ aufrufen kann
             # liefer mel spectrogramm
             train_set = get_fold_dataset(subset="train")
             print('*****')
             print(f'train folds are {train_set.train_folds} and test fold is {train_set.test_folds}')
-            print('random wave cropping')
 
             # data loader verwendet config, was angepasst werden kann
-            train_loader = torch.utils.data.DataLoader(train_set,
-                                                       batch_size=config.batch_size,
-                                                       shuffle=True,
-                                                       num_workers=config.num_workers,
-                                                       drop_last=False,
-                                                       persistent_workers=config.persistent_workers,
-                                                       pin_memory=True,
-                                                       )
+            train_loader = torch.utils.data.DataLoader(
+                train_set,
+                batch_size=cfg.training.batch_size,
+                shuffle=True,
+                num_workers=cfg.training.num_workers,
+                drop_last=False,
+                persistent_workers=cfg.training.persistent_workers,
+                pin_memory=True,
+            )
 
-            val_loader = torch.utils.data.DataLoader(get_fold_dataset(subset="val"),
-                                                     batch_size=config.batch_size,
-                                                     shuffle=False,
-                                                     num_workers=config.num_workers,
-                                                     drop_last=False,
-                                                     persistent_workers=config.persistent_workers,
-                                                     )
+            val_loader = torch.utils.data.DataLoader(
+                get_fold_dataset(subset="val"),
+                batch_size=cfg.training.batch_size,
+                shuffle=False,
+                num_workers=cfg.training.num_workers,
+                drop_last=False,
+                persistent_workers=cfg.training.persistent_workers,
+            )
 
             print()
             # instantiate model
-            model = make_model()
-            # model = nn.DataParallel(model, device_ids=config.device_ids)
+            model = hydra.utils.instantiate(cfg.model)
             model = model.to(device)
             print('*****')
 
             # Define a loss function and optimizer
             criterion = nn.CrossEntropyLoss().to(device)
 
-            # SGD optimizer with momentum and weight decay
-            # Man könnte auch Adam verwenden
-            optimizer = torch.optim.SGD(model.parameters(),
-                                        lr=config.lr,
-                                        momentum=0.9,
-                                        weight_decay=config.weight_decay)
+            if cfg.training.optimizer.name == "adam":
+                optimizer = torch.optim.Adam(
+                    model.parameters(),
+                    lr=cfg.training.optimizer.lr,
+                    weight_decay=cfg.training.optimizer.weight_decay
+                )
+            elif cfg.training.optimizer.name == "sgd":
+                # SGD optimizer with momentum and weight decay
+                optimizer = torch.optim.SGD(
+                    model.parameters(),
+                    lr=cfg.training.optimizer.lr,
+                    momentum=cfg.training.optimizer.momentum,
+                    weight_decay=cfg.training.optimizer.weight_decay
+                )
 
             # nach fixer Anzahl an Epochen wird die Lernrate angepasst
-            scheduler = torch.optim.lr_scheduler.StepLR(optimizer,
-                                                        step_size=config.step_size,
-                                                        gamma=config.gamma)
+            scheduler = torch.optim.lr_scheduler.StepLR(
+                optimizer,
+                step_size=cfg.training.step_size,
+                gamma=cfg.training.gamma
+            )
 
             # fit the model using only training and validation data, no testing data allowed here
             print()
             fit_classifier()
 
             # tests
-            test_loader = torch.utils.data.DataLoader(get_fold_dataset(subset="test"),
-                                                      batch_size=config.batch_size,
-                                                      shuffle=False,
-                                                      num_workers=0,  # config.num_workers,
-                                                      drop_last=False,
-                                                      )
+            test_loader = torch.utils.data.DataLoader(
+                get_fold_dataset(subset="test"),
+                batch_size=cfg.training.batch_size,
+                shuffle=False,
+                num_workers=cfg.training.num_workers,
+                drop_last=False,
+            )
 
             print(f'\ntest {experiment}')
-            test_acc, test_loss, _ = test(model, test_loader, criterion=criterion, device=device)
+            test_acc, test_loss, _ = test(
+                model,
+                test_loader,
+                criterion=criterion,
+                device=device
+            )
             scores[test_fold] = pd.Series(dict(TestAcc=test_acc, TestLoss=np.mean(test_loss)))
             print(scores[test_fold])
-            # print(scores[test_fold].unstack())
             print()
     scores = pd.concat(scores).unstack([-1])
     print(pd.concat((scores, scores.agg(['mean', 'std']))))
+
+
+if __name__ == "__main__":
+    # digits for logging
+    float_fmt = ".3f"
+    pd.options.display.float_format = ('{:,' + float_fmt + '}').format
+    main()

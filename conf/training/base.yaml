@@ -1,20 +1,30 @@
-device_id: 0
+
+defaults:
+  - _self_
+  #### OPTIMIZATION ####
+  - optimizer: sgd
+
+
+# Number of epochs to train the model
 epochs: 200
+
+#### EARLY STOPPING ####
+# early stopping after epochs with no improvement
 patience: 20
+# Early stopping delta
+delta: 0.002 # default 0.002
 
-
-# DataLoader
+#### DATA LOADER ####
+# how many samples per batch to load (default: 1).
 batch_size: 32
-#num_workers: 2  # 6-16 for Linux
-num_workers: 0
-#persistent_workers: true
+# how many subprocesses to use for data loading. 0 means that the data will be loaded in the main process. (default: 0)
+num_workers: 10
+# If True, the data loader will not shut down the worker processes after a dataset has been consumed once. This allows to maintain the workers Dataset instances alive. (default: False)
 persistent_workers: false
 disable_bat_pbar: false
 
-
-# Optimization
-lr: 0.001
-weight_decay: 0.001
-warm_epochs: 10
+#### SCHEDULER STEP LR ####
+# Multiplicative factor of learning rate decay. Default: 0.1.
 gamma: 0.8
+# Period of learning rate decay.
 step_size: 5
