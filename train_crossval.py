@@ -25,7 +25,7 @@ def test(cfg, model, dataloader, criterion, device):
     probs = {}
     with torch.no_grad():
         # no gradient computation needed
-        for k, x, label in tqdm(dataloader, unit='bat', disable=cfg.training.disable_bat_pbar, position=0):
+        for k, x, label in tqdm(dataloader, unit='bat', disable=cfg.training.debug.disable_bat_pbar, position=0):
             x = x.float().to(device)
             y_true = label.to(device)
 
@@ -56,7 +56,7 @@ def train_epoch():
     # train_loader gibt ein batch an mel spectrogramm und labels zurück
     # 32 samples in einem batch
     # Zufälliges Auswählen von Samples macht der DataLoader
-    for _, x, label in tqdm(train_loader, unit='bat', disable=cfg.training.disable_bat_pbar, position=0):
+    for _, x, label in tqdm(train_loader, unit='bat', disable=cfg.training.debug.disable_bat_pbar, position=0):
         # Epoche wird per Batchsize in steps unterteilt
         # Das hier ist quasi ein Step
         # Sehr abhängig von num_workers. Prozesse arbeiten parallel für einen Batch
