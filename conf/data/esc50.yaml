@@ -1,14 +1,48 @@
+# The Fourier transform is a mathematical technique used to decompose a signal into its constituent frequency components.
+# It is widely used in audio signal processing to analyze, filter and manipulate sound signals.
+#
+# The Fourier transform of a time-domain signal, such as an audio signal,
+# produces a frequency-domain representation of the signal.
+# This representation shows the relative amplitudes of the different frequency components that make up the signal.
+# This information is useful for understanding the characteristics of the sound, such as its pitch and timbre,
+# and for filtering or modifying specific frequency ranges.
+#
+# There are different types of Fourier transforms, the most common is the discrete Fourier transform (DFT),
+# which is used to convert a discrete-time signal into a discrete-frequency representation.
+# The DFT requires a large amount of computation, so in practice,
+# the fast Fourier transform (FFT) algorithm is often used to efficiently calculate the DFT.
+#
+# The short-time Fourier transform (STFT) is a variation of the DFT that is used to analyze audio signals.
+# It breaks the audio signal into short segments and applies the DFT to each segment,
+# providing a time-frequency representation of the signal.
+# This is useful for analyzing the frequency content of a sound over time,
+# and for tasks such as pitch detection and audio compression.
+
+
 path: ../../../data/esc50
 runs_path: results
+# The number of folds (do not touch)
 folds: 5
+# The specific test folds (chnage it to [1], if you only want to test on the first fold)
 test_folds: [1, 2, 3, 4, 5]
+# The size if the validation data during one
 val_size: 0.2
 
+# Sample rate
 sr: 44100
+# FFT window size,
 n_fft: 1024
+# number audio of frames between STFT columns
 hop_length: 512
 n_mels: 128
-#n_mfcc = 42
+# Mel-Frequency Cepstral Coefficients (MFCCs)
+# The result of these steps is a set of coefficients that represent the spectral envelope of the audio signal.
+# The number of MFCCs used in a given application can vary, but typically, between 12 and 40 coefficients are used.
+#
+# MFCCs are robust to variations in the audio signal, such as changes in pitch, speed, and noise.
+# They are widely used in speech and music processing tasks such as speech recognition, music genre classification, and speaker identification.
+# They can also be used in conjunction with other features, such as Chroma feature or Spectral rolloff, to improve the performance of audio classification tasks.
+#n_mfcc: 42
 
 # overrides
 #sr: 22050
