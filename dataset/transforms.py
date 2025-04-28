@@ -175,6 +175,44 @@ class TimeMask():
         return self.addTimeMask(wave)
 
 
+class PitchShift:
+    def __init__(self, sr, bins_per_octave: int = 12, low_octave_bound: float = -2.0, high_octave_bound: float = 2.0):
+        super(PitchShift, self).__init__()
+        self.sr = sr
+        self.bins_per_octave = bins_per_octave
+        self.low_octave = low_octave_bound
+        self.high_octave = high_octave_bound
+
+    def pitchShift(self, wave: torch.Tensor) -> torch.Tensor:
+        # pick a random shift in semitones within [low_octave*12, high_octave*12]
+        n_steps = random.uniform(self.low_octave * self.bins_per_octave, self.high_octave * self.bins_per_octave)
+
+        # librosa operates on numpy; convert, process, then back to torch
+        y = wave.cpu().numpy()
+        y_shifted = librosa.effects.pitch_shift(
+            y,
+            sr=self.sr,
+            n_steps=n_steps,
+            bins_per_octave=self.bins_per_octave
+        )
+
+        # restore original dtype & device
+        return torch.from_numpy(y_shifted).to(dtype=wave.dtype, device=wave.device)
+
+    def __call__(self, wave: torch.Tensor) -> torch.Tensor:
+        return self.pitchShift(wave)
 
 
+class VolumeShift:
+    def __init__(self, lower_bound: float = 0.5, upper_bound: float = 1.5):
+        super(VolumeShift, self).__init__()
+        self.lower_bound = lower_bound
+        self.upper_bound = upper_bound
 
+    def volumeShift(self, wave: torch.Tensor) -> torch.Tensor:
+        # pick a random gain factor in [lower_bound, upper_bound]
+        gain = random.uniform(self.lower_bound, self.upper_bound)
+        return wave * gain
+
+    def __call__(self, wave: torch.Tensor) -> torch.Tensor:
+        return self.volumeShift(wave)
