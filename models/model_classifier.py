@@ -76,7 +76,6 @@ class MFCC_10CNN(nn.Module):
         x = self.classifier(x)
         return x
 
-
 class ESC50_CNN(nn.Module):
     def __init__(self, n_mels, n_frames, num_classes=50):
         super().__init__()
@@ -112,4 +111,51 @@ class ESC50_CNN(nn.Module):
     def forward(self, x):
         x = self.features(x)
         x = self.classifier(x)
+        return x
+
+class MFCC_2DCNN(nn.Module):
+    def __init__(self, in_channels: int = 1, num_classes: int = 50):
+        super().__init__()
+        self.features = nn.Sequential(
+            nn.Conv2d(in_channels, 64, kernel_size=(5,5), padding=2),
+            nn.BatchNorm2d(64),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(kernel_size=(2,2), stride=(2,2)),
+
+            nn.Conv2d(64, 128, kernel_size=(5,5), padding=2),
+            nn.BatchNorm2d(128),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(kernel_size=(2,2), stride=(2,2)),
+
+            nn.Conv2d(128, 256, kernel_size=(5,5), padding=2),
+            nn.BatchNorm2d(256),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(kernel_size=(2,2), stride=(2,2)),
+
+            nn.Conv2d(256, 512, kernel_size=(5,5), padding=2),
+            nn.BatchNorm2d(512),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(kernel_size=(2,2), stride=(2,2)),
+
+            nn.Conv2d(512, 512, kernel_size=(5,5), padding=2),
+            nn.BatchNorm2d(512),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(kernel_size=(2,2), stride=(2,2)),
+        )
+
+        # Globales Pooling auf 1×1, dann klassifizieren
+        self.global_pool = nn.AdaptiveAvgPool2d((1, 1))
+        self.classifier = nn.Sequential(
+            nn.Flatten(),
+            nn.Linear(512, 256),
+            nn.ReLU(inplace=True),
+            nn.Dropout(0.5),
+            nn.Linear(256, num_classes),
+            nn.Softmax(dim=1)
+        )
+
+    def forward(self, x):
+        x = self.features(x)        # → (B, 512, H', W')
+        x = self.global_pool(x)     # → (B, 512, 1, 1)
+        x = self.classifier(x)      # → (B, num_classes)
         return x
