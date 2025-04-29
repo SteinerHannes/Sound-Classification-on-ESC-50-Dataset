@@ -1,0 +1,3 @@
+_target_: models.model_classifier.ESC50_CNN
+n_mels: 128
+n_frames: 431      # ((sr*5)//hop_length)
