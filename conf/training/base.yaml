@@ -2,7 +2,8 @@
 defaults:
   - _self_
   #### OPTIMIZATION ####
-  - optimizer: adam
+  - optimizer: sgd
+  - scheduler: step_lr
 
 
 # Number of epochs to train the model
@@ -21,12 +22,6 @@ batch_size: 32
 num_workers: 5
 # If True, the data loader will not shut down the worker processes after a dataset has been consumed once. This allows to maintain the workers Dataset instances alive. (default: False)
 persistent_workers: true
-
-#### SCHEDULER STEP LR ####
-# Multiplicative factor of learning rate decay. Default: 0.1.
-gamma: 0.8
-# Period of learning rate decay.
-step_size: 5
 
 debug:
   # sub-epoch (batch-level) progress bar display
