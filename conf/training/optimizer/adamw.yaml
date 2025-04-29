@@ -1,0 +1,6 @@
+#### ADAMW ####
+name: adamw
+# Adam learning rate
+lr: 0.001
+# Adam Weights decay
+weight_decay: 0.0001
