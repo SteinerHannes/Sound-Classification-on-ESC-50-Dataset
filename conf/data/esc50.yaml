@@ -26,7 +26,7 @@ folds: 5
 # The specific test folds (chnage it to [1], if you only want to test on the first fold)
 test_folds: [1, 2, 3, 4, 5]
 # The size if the validation data during one
-val_size: 0.2
+val_size: 0.1
 
 # Sample rate
 sr: 44100
@@ -44,5 +44,3 @@ n_mels: 128
 # They can also be used in conjunction with other features, such as Chroma feature or Spectral rolloff, to improve the performance of audio classification tasks.
 #n_mfcc: 42
 
-# overrides
-#sr: 22050
