@@ -3,4 +3,4 @@ name: adam
 # Adam learning rate
 lr: 0.001
 # Adam Weights decay
-weight_decay: 0.001
+weight_decay: 0.0001
