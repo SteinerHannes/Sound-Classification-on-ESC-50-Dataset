@@ -1,0 +1,28 @@
+
+defaults:
+  - _self_
+  #### OPTIMIZATION ####
+  - optimizer: adamw
+  - scheduler: warmup_cosine
+
+
+# Number of epochs to train the model
+epochs: 200
+
+#### EARLY STOPPING ####
+# early stopping after epochs with no improvement
+patience: 15
+# Early stopping delta
+delta: 0.0
+
+#### DATA LOADER ####
+# how many samples per batch to load (default: 1).
+batch_size: 64
+# how many subprocesses to use for data loading. 0 means that the data will be loaded in the main process. (default: 0)
+num_workers: 5
+# If True, the data loader will not shut down the worker processes after a dataset has been consumed once. This allows to maintain the workers Dataset instances alive. (default: False)
+persistent_workers: true
+
+debug:
+  # sub-epoch (batch-level) progress bar display
+  disable_bat_pbar: false

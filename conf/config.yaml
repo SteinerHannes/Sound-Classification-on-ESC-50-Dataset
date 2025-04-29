@@ -1,8 +1,8 @@
 defaults:
   - _self_
   - data: esc50
-  - model: audio-mlp
-  - training: base  
+  - model: esc50-cnn
+  - training: base2
   #- training: kaggle-T4
 
 test:
@@ -15,11 +15,11 @@ test:
 data:
   use_hardcoded_global_stats: true
   hardcoded_global_stats:
-    - [-54.369884, 20.843649]
-    - [-54.27712, 20.85503]
-    - [-54.188335, 20.79954]
-    - [-54.236378, 20.792656]
-    - [-54.193005, 20.953829]
+    - [-42.994774,  28.871056]
+    - [-43.076977,  28.749863]
+    - [-42.75472 ,  28.80137 ]
+    - [-42.946777,  28.738012]
+    - [-42.961735,  28.822393]
 
 
 hydra:
