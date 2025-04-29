@@ -1,0 +1,6 @@
+#### COSINE ANNEALING ####
+name: cosine
+# T_max (int): Maximum number of iterations.
+T_max: 95
+# eta_min (float): Minimum learning rate. Default: 0.
+eta_min: 1e-5

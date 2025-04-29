@@ -229,6 +229,13 @@ def main(config: DictConfig) -> None:
                     lr=cfg.training.optimizer.lr,
                     weight_decay=cfg.training.optimizer.weight_decay
                 )
+            elif cfg.training.optimizer.name == "adamw":
+                # AdamW optimizer with weight decay
+                optimizer = torch.optim.AdamW(
+                    model.parameters(),
+                    lr=cfg.training.optimizer.lr,
+                    weight_decay=cfg.training.optimizer.weight_decay
+                )
             elif cfg.training.optimizer.name == "sgd":
                 # SGD optimizer with momentum and weight decay
                 optimizer = torch.optim.SGD(
@@ -238,12 +245,38 @@ def main(config: DictConfig) -> None:
                     weight_decay=cfg.training.optimizer.weight_decay
                 )
 
-            # nach fixer Anzahl an Epochen wird die Lernrate angepasst
-            scheduler = torch.optim.lr_scheduler.StepLR(
-                optimizer,
-                step_size=cfg.training.step_size,
-                gamma=cfg.training.gamma
-            )
+
+            if cfg.training.scheduler.name == "cosine":
+                scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
+                    optimizer,
+                    T_max=cfg.training.scheduler.T_max,
+                    eta_min=cfg.training.scheduler.eta_min,
+                )
+            elif cfg.training.scheduler.name == "step":
+                scheduler = torch.optim.lr_scheduler.StepLR(
+                    optimizer,
+                    step_size=cfg.training.scheduler.step_size,
+                    gamma=cfg.training.scheduler.gamma
+                )
+            elif cfg.training.scheduler.name == "warmup_cosine":
+
+                warmup_scheduler = torch.optim.lr_scheduler.LinearLR(
+                    optimizer,
+                    start_factor=cfg.training.scheduler.warmup_start_factor,
+                    total_iters=cfg.training.scheduler.warmup_epochs,
+                )
+
+                cosine_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
+                    optimizer,
+                    T_max=cfg.training.scheduler.T_max,
+                    eta_min=cfg.training.scheduler.eta_min,
+                )
+
+                scheduler = torch.optim.lr_scheduler.SequentialLR(
+                    optimizer,
+                    schedulers=[warmup_scheduler, cosine_scheduler],
+                    milestones=[cfg.training.scheduler.warmup_epochs]
+                )
 
             # fit the model using only training and validation data, no testing data allowed here
             print()

@@ -1,0 +1,10 @@
+name: warmup_cosine
+
+# warmup_start_factor (float): Warmup start factor.
+warmup_start_factor: 0.1
+# warmup_epochs (int): Number of epochs for warmup.
+warmup_epochs: 5
+# T_max (int): Maximum number of iterations.
+T_max: 95
+# eta_min (float): Minimum learning rate.
+eta_min: 1e-5
