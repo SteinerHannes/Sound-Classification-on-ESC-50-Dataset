@@ -3,7 +3,7 @@ defaults:
   - _self_
   #### OPTIMIZATION ####
   - optimizer: sgd
-  - scheduler: step_lr
+  - scheduler: step
 
 
 # Number of epochs to train the model
