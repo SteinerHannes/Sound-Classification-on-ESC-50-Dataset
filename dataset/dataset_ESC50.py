@@ -98,11 +98,11 @@ class ESC50(data.Dataset):
             # transforms can be applied on wave and spectral representation
             self.wave_transforms = transforms.Compose(
                 torch.Tensor,
-                #transforms.RandomScale(max_scale=1.25),
-                transforms.RandomNoise(min_noise=0.002, max_noise=0.01),
+                transforms.RandomScale(max_scale=1.25),
+                #transforms.RandomNoise(min_noise=0.002, max_noise=0.01),
                 transforms.RandomPadding(out_len=out_len),
                 transforms.RandomCrop(out_len=out_len),
-                #transforms.PitchShift(sr=self.cfg.data.sr, low_octave_bound=-2, high_octave_bound=2),
+                # transforms.PitchShift(sr=self.cfg.data.sr, low_octave_bound=-2, high_octave_bound=2),
                 #transforms.VolumeShift(lower_bound=0.5, upper_bound=1.5)
             )
             # Zufällige Breiche mit Frequenzen überschreiben/maskieren
@@ -112,8 +112,8 @@ class ESC50(data.Dataset):
                 # lambda non-pickleable, problem on windows, replace with partial function
                 torch.Tensor,
                 partial(torch.unsqueeze, dim=0),
-                transforms.FrequencyMask(max_width=15, numbers=3),
-                transforms.TimeMask(max_width=15, numbers=3),
+                # transforms.FrequencyMask(max_width=15, numbers=3),
+                # transforms.TimeMask(max_width=15, numbers=3),
             )
         else:
             # for testing transforms are applied deterministically to support reproducible scores
