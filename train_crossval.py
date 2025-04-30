@@ -259,7 +259,6 @@ def main(config: DictConfig) -> None:
                     gamma=cfg.training.scheduler.gamma
                 )
             elif cfg.training.scheduler.name == "warmup_cosine":
-
                 warmup_scheduler = torch.optim.lr_scheduler.LinearLR(
                     optimizer,
                     start_factor=cfg.training.scheduler.warmup_start_factor,
