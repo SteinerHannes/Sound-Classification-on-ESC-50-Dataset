@@ -82,12 +82,12 @@ class ESC50_CNN(nn.Module):
 
 
         self.features = nn.Sequential(
-            nn.Conv2d(1, 32, kernel_size=5, padding=1),
+            nn.Conv2d(1, 32, kernel_size=7, padding=3),
             nn.BatchNorm2d(32),
             nn.ReLU(),
             nn.MaxPool2d(kernel_size=2),
 
-            nn.Conv2d(32, 64, kernel_size=5, padding=1),
+            nn.Conv2d(32, 64, kernel_size=7, padding=3),
             nn.BatchNorm2d(64),
             nn.ReLU(),
             nn.MaxPool2d(kernel_size=2),
