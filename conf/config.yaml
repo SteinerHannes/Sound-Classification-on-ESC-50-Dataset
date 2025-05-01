@@ -7,7 +7,7 @@ defaults:
 
 test:
   reproducible: false
-  experiment_path: ../../../outputs/train_crossval/003
+  experiment_path: ../../../outputs/train_crossval/004
   checkpoints:
     - 'terminal.pt'
     #- 'best_val_loss.pt'
