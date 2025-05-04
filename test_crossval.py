@@ -10,7 +10,7 @@ from dataset.dataset_ESC50 import ESC50, download_extract_zip, get_global_stats
 from train_crossval import test
 
 
-@hydra.main(version_base="1.3", config_path="conf", config_name="config")
+#@hydra.main(version_base="1.3", config_path="conf", config_name="config")
 def main(cfg: DictConfig):
     reproducible = cfg.test.reproducible
     data_path = cfg.data.path
@@ -87,9 +87,55 @@ def main(cfg: DictConfig):
     print(scores)
     print()
 
+def use_backup_config() -> DictConfig:
+    s = """
+    test:
+      reproducible: false
+      experiment_path: ./
+      checkpoints:
+      - terminal.pt
+    data:
+      use_hardcoded_global_stats: false
+      path: ./data/esc50
+      runs_path: results
+      folds: 5
+      test_folds:
+      - 1
+      - 2
+      - 3
+      - 4
+      - 5
+      val_size: 0.2
+      sr: 44100
+      n_fft: 1024
+      hop_length: 512
+      n_mels: 128
+    model:
+      _target_: models.model_classifier.ESC50_CNN
+    training:
+      epochs: 200
+      patience: 20
+      delta: 0.002
+      batch_size: 32
+      num_workers: 5
+      persistent_workers: true
+      debug:
+        disable_bat_pbar: false
+      optimizer:
+        name: adamw
+        lr: 0.001
+        weight_decay: 0.001
+      scheduler:
+        name: step
+        gamma: 0.8
+        step_size: 5
+    """
+    from omegaconf import OmegaConf
+    return OmegaConf.create(s)
 
 if __name__ == "__main__":
     # digits for logging
     float_fmt = ".3f"
     pd.options.display.float_format = ('{:,' + float_fmt + '}').format
-    main()
+    config = use_backup_config()
+    main(config)
