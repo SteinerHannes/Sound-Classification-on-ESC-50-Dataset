@@ -1,13 +1,15 @@
+import argparse
+import os
+
 import hydra
 from omegaconf import DictConfig
 import torch
 import torch.nn as nn
 import pandas as pd
 import numpy as np
-import os
 
 from dataset.dataset_ESC50 import ESC50, download_extract_zip, get_global_stats
-from train_crossval import test
+from train_crossval import test, use_backup_config, use_hydra
 
 
 @hydra.main(version_base="1.3", config_path="conf", config_name="config")
@@ -92,4 +94,12 @@ if __name__ == "__main__":
     # digits for logging
     float_fmt = ".3f"
     pd.options.display.float_format = ('{:,' + float_fmt + '}').format
-    main()
+    if use_hydra:
+        main()
+    else:
+        cfg = use_backup_config()
+        parser = argparse.ArgumentParser()
+        parser.add_argument('cvpath', nargs='?', default=cfg.test.experiment_path)
+        args = parser.parse_args()
+        cfg.test.experiment_path = args.cvpath
+        main(cfg)

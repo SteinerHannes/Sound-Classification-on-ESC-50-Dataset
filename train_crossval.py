@@ -1,3 +1,4 @@
+from datetime import datetime
 from pathlib import Path
 
 import hydra
@@ -7,13 +8,68 @@ import pandas as pd
 import numpy as np
 import os
 
-from omegaconf import DictConfig
+from omegaconf import OmegaConf, DictConfig
 from tqdm import tqdm
 import sys
 from functools import partial
 
 from models.utils import EarlyStopping, Tee
 from dataset.dataset_ESC50 import ESC50, get_global_stats
+
+use_hydra = False
+
+config_string = """
+test:
+  reproducible: false
+  experiment_path: ./results/final
+  checkpoints:
+  - terminal.pt
+data:
+  use_hardcoded_global_stats: true
+  hardcoded_global_stats:
+  - - -55.599957
+    - 21.008253
+  - - -55.503323
+    - 21.025076
+  - - -55.373093
+    - 21.019352
+  - - -55.464325
+    - 20.95555
+  - - -55.449673
+    - 21.124916
+  path: ./data/esc50
+  folds: 5
+  test_folds:
+  - 1
+  - 2
+  - 3
+  - 4
+  - 5
+  val_size: 0.2
+  sr: 44100
+  n_fft: 1024
+  hop_length: 512
+  n_mels: 128
+model:
+  _target_: models.model_classifier.ESC50_CNN
+training:
+  epochs: 200
+  patience: 20
+  delta: 0.002
+  batch_size: 32
+  num_workers: 5
+  persistent_workers: true
+  debug:
+    disable_bat_pbar: false
+  optimizer:
+    name: adamw
+    lr: 0.001
+    weight_decay: 0.001
+  scheduler:
+    name: step
+    gamma: 0.85
+    step_size: 5
+"""
 
 # evaluate model on different testing data 'dataloader'
 def test(cfg, model, dataloader, criterion, device):
@@ -157,7 +213,7 @@ def main(config: DictConfig) -> None:
     use_mps = torch.backends.mps.is_available()
     device = torch.device(f"cuda:{cfg.training.device_id}" if use_cuda else "mps" if use_mps else "cpu")
 
-    experiment_root = Path(os.getcwd())
+    experiment_root = experiment_path(cfg=cfg)
     print(f"Output directory: {experiment_root}")
 
     print(f"Calculating global mean and std for training data of each fold from: {data_path}")
@@ -305,9 +361,21 @@ def main(config: DictConfig) -> None:
     scores = pd.concat(scores).unstack([-1])
     print(pd.concat((scores, scores.agg(['mean', 'std']))))
 
+def use_backup_config() -> DictConfig:
+    return OmegaConf.create(config_string)
+
+def experiment_path(cfg: DictConfig) -> str:
+    if use_hydra:
+        return Path(os.getcwd())
+    else:
+        return Path(os.getcwd()) / "results" / datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 
 if __name__ == "__main__":
     # digits for logging
     float_fmt = ".3f"
     pd.options.display.float_format = ('{:,' + float_fmt + '}').format
-    main()
+    if use_hydra:
+        main()
+    else:
+        cfg = use_backup_config()
+        main(cfg)
