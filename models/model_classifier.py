@@ -84,27 +84,27 @@ class ESC50_CNN(nn.Module):
         self.features = nn.Sequential(
             nn.Conv2d(1, 32, kernel_size=5, padding=1),
             nn.BatchNorm2d(32),
-            nn.LeakyReLU(),
+            nn.ReLU(),
             nn.MaxPool2d(kernel_size=2),
 
             nn.Conv2d(32, 64, kernel_size=5, padding=1),
             nn.BatchNorm2d(64),
-            nn.LeakyReLU(),
+            nn.ReLU(),
             nn.MaxPool2d(kernel_size=2),
 
             nn.Conv2d(64, 128, kernel_size=5, padding=1),
             nn.BatchNorm2d(128),
-            nn.LeakyReLU(),
+            nn.ReLU(),
             nn.AvgPool2d(kernel_size=2),
 
             nn.Conv2d(128, 256, kernel_size=5, padding=1),
             nn.BatchNorm2d(256),
-            nn.LeakyReLU(),
+            nn.ReLU(),
             nn.AvgPool2d(kernel_size=2),
 
             nn.Conv2d(256, 512, kernel_size=5, padding=1),
             nn.BatchNorm2d(512),
-            nn.LeakyReLU(),
+            nn.ReLU(),
             nn.Dropout(0.3),
             nn.AdaptiveMaxPool2d((1, 1)),
         )

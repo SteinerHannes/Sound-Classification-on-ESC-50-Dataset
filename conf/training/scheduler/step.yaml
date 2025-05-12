@@ -1,6 +1,6 @@
 #### STEP LR ####
 name: step
 # Multiplicative factor of learning rate decay.
-gamma: 0.8
+gamma: 0.85
 # Period of learning rate decay.
 step_size: 5
