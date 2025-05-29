@@ -211,7 +211,7 @@ def main(config: DictConfig) -> None:
     data_path = Path(cfg.data.path)
     use_cuda = torch.cuda.is_available()
     use_mps = torch.backends.mps.is_available()
-    device = torch.device(f"cuda:{cfg.training.device_id}" if use_cuda else "mps" if use_mps else "cpu")
+    device = torch.device(f"cuda:0" if use_cuda else "mps" if use_mps else "cpu")
 
     experiment_root = experiment_path(cfg=cfg)
     print(f"Output directory: {experiment_root}")
